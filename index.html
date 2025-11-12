@@ -5,23 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>پێشەوا کولیچاوی</title>
 <style>
-  body { font-family: sans-serif; margin:0; padding:0; text-align:center; background:#111; color:#fff; }
-  h1 { margin:20px; }
-  #welcome, #levels, #quiz { display:none; }
-  .level-btn { margin:10px; padding:15px 30px; font-size:18px; }
-  button { margin:5px; padding:10px 20px; font-size:16px; }
-  #feedback { font-size:18px; margin:10px; }
-  #bigBadge { font-size:36px; font-weight:bold; display:none; margin:10px; }
-  #mediaOverlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000c; justify-content:center; align-items:center; }
-  #mediaFrame { width:80%; height:80%; }
-  .background { background-size:cover; background-position:center; min-height:300px; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+body { font-family: sans-serif; margin:0; padding:0; text-align:center; background:#111; color:#fff; }
+h1 { margin:20px; }
+#welcome, #levels, #quiz { display:none; }
+.level-btn { margin:10px; padding:15px 30px; font-size:18px; }
+button { margin:5px; padding:10px 20px; font-size:16px; cursor:pointer; }
+#feedback { font-size:18px; margin:10px auto; padding:10px; background: rgba(0,0,0,0.6); border-radius:8px; display:inline-block; max-width:90%; }
+#bigBadge { font-size:36px; font-weight:bold; display:none; margin:10px auto; padding:10px; background: rgba(0,0,0,0.7); border-radius:12px; }
+#mediaOverlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000c; justify-content:center; align-items:center; z-index:1000; }
+#mediaFrame { width:80%; height:80%; }
+.background { 
+  background-size:cover; 
+  background-position:center; 
+  min-height:100vh; 
+  display:flex; 
+  justify-content:center; 
+  align-items:center; 
+  padding:20px;
+}
+#quizContent {
+  background: rgba(0,0,0,0.6); 
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 90%;
+  margin: 20px auto;
+}
+#question { font-size:22px; margin-bottom:15px; color:#fff; }
+#answers button { display:block; margin:10px auto; padding:12px 25px; font-size:18px; }
+.jumpscare {
+  display:none; 
+  position:fixed; 
+  top:0; left:0; 
+  width:100%; height:100%; 
+  background-size:cover; 
+  background-position:center; 
+  z-index:999; 
+}
 </style>
 </head>
 <body>
 
 <div id="welcome">
   <h1>سڵاو بەخێربێیت بۆ یاری کولیچە</h1>
-  <p>ئەم یاریە دە پرسیارە و تەنها بۆ خۆشیە ڕێزم بۆ کاک پێشەوا و ئێوەش هەیە و لەهەڵەکانمان ببورن و بەهیوای چێژ</p>
+  <p>ئەم یاریە دە پرسیارە و تەنها بۆ خۆشیە لەهەڵەکانمان ببورن و بەهیوای چێژ</p>
   <button onclick="startGame()">دەستپێکردن</button>
 </div>
 
@@ -31,12 +57,14 @@
 </div>
 
 <div id="quiz" class="background">
-  <h2 id="question"></h2>
-  <div id="answers"></div>
-  <div id="feedback"></div>
-  <div id="bigBadge"></div>
-  <button onclick="backToLevels()">گەڕانەوە بۆ ئاستەکان</button>
-  <button onclick="retryLevel()">دووبارە</button>
+  <div id="quizContent">
+    <h2 id="question"></h2>
+    <div id="answers"></div>
+    <div id="feedback"></div>
+    <div id="bigBadge"></div>
+    <button onclick="backToLevels()">گەڕانەوە بۆ ئاستەکان</button>
+    <button onclick="retryLevel()">دووبارە</button>
+  </div>
 </div>
 
 <div id="mediaOverlay">
@@ -44,94 +72,86 @@
   <button onclick="closeMedia()">Close</button>
 </div>
 
+<!-- Jumpscare images -->
+<div id="jumpscare" class="jumpscare"></div>
+
 <script>
 let currentIndex = 0;
 let unlocked = 1; // only first level unlocked at start
 
 const quiz = [
-  {
-    question:"کەسێک لەچاڵێک گیردەخوا بۆ ناتوانێ بێتە دەر",
+  { question:"کەسێک لەچاڵێک گیردەخوا بۆ ناتوانێ بێتە دەر",
     answers:["لەبەرەوەی ناوی عاسیە","لەبەرەوەی مردوە","لەبەرەوەی بەنزینی نەماوە","لەبەرەوەی چاڵەکە قوڵە"],
     correct:0,
     feedback:["قۆپیە ناکەی وا زیرەکی","ئەوە تۆ خزمی ئەنیشتاین نیت؟","بۆ سەیارەیە گوناح؟","نداخۆ غڵتی گوناح"],
     wrongVideo:"https://youtube.com/shorts/7zyAKbLRpQ4?si=4-HRHQJFBYwkvk0H",
     background:"https://i.ibb.co/cSN58rxn/Screenshot-20251112-164659-You-Tube.jpg"
   },
-  {
-    question:"کولیچەیەک ئەچێت بۆ وەرگرتنی کار پێی ئەڵێن بەهرەت چییە ئەڵێ لاسایی ئاژەڵ ئەکەمەوە جا کارەکەی نادەنێ چی ئەکا؟",
+  { question:"کولیچەیەک ئەچێت بۆ وەرگرتنی کار پێی ئەڵێن بەهرەت چییە ئەڵێ لاسایی ئاژەڵ ئەکەمەوە جا کارەکەی نادەنێ چی ئەکا؟",
     answers:["پەنجەرەکە ئەکاتەوە ئەفڕێ","دڵتەنگ ئەبێ","بەدوای کارێکی تر ئەگەڕێ","خۆی ئەکوژێ"],
     correct:0,
     feedback:["تا ئێستا چەن کولیچەت بینیوە بفڕێ","بەڕاست؟","کولیچەیەکی زیرەکە ها","🐸گەر کولیچەکان خۆیان بکوژن ئۆپۆزسیۆنی کولیچە هەڵەوەشێتەوە"],
     background:"https://i.ibb.co/twK5L3KT/Screenshot-20251112-165459-You-Tube.jpg"
   },
-  {
-    question:"گەر کەسێک مێشکی فراوان بێت چی ئەبێت؟",
+  { question:"گەر کەسێک مێشکی فراوان بێت چی ئەبێت؟",
     answers:["زیرەک ئەبێت","بەهرەکانی زیاد دەکا","ئەتوانێ کولیچە دروست بکا","ناتوانێت تیشێرتەکەی دابکەنێ"],
     correct:3,
     feedback:["ئی هوار چن کاریگرە ئازیزان","شانسی زۆرە ها","😂ئەی بۆ نایکڕێت هەی گوناح","تکایە ئاگاداری مێشکتان بن کاریگرە"],
-    background:"https://i.ibb.co/YByK3Nbp/Screenshot-20251112-171818-Chrome.jpg"
+    background:"https://i.ibb.co/YByK3Nbp/Screenshot-20251112-171818-Chrome.jpg",
+    jumpscare:"https://i.ibb.co/YByK3Nbp/Screenshot-20251112-171818-Chrome.jpg"
   },
-  {
-    question:"دکتۆرێک لە ترافیکێک گیر ئەخوا سێر ئەکا ترافیکەکە باش کار ناکا دائەبەزێت لەسەیارەکەی چی ئەکا؟",
+  { question:"دکتۆرێک لە ترافیکێک گیر ئەخوا سێر ئەکا ترافیکەکە باش کار ناکا دائەبەزێت لەسەیارەکەی چی ئەکا؟",
     answers:["پیای ئەکێشێ","بەپێ ئەڕوا","قەترەی بۆ ئەنوسێ","دەردە دڵی بۆئەکا چونکە خەمبارە"],
     correct:2,
     feedback:["😊ئەی بۆ نایخاتە برنجەوە؟","تەکنەلۆجیا لەخۆت دێ هەی ئەفلاتون","😊😊ترافیکەکانتان خۆش بوێت","🐸بۆ ترافیکەکەی هاوڕێی بەجێی هێشتوە؟"],
     background:"https://i.ibb.co/pBqnFzJs/Screenshot-20251112-165529-You-Tube.jpg"
   },
-  {
-    question:"گەر دوو مامۆستای عەرەبی دوو منداڵیان هەبێت ناوی ئەنێن چی؟",
+  { question:"گەر دوو مامۆستای عەرەبی دوو منداڵیان هەبێت ناوی ئەنێن چی؟",
     answers:["زانا و دانا","فتحە و کسرە","ماضی و مضارع","ئەحمەد و محمد"],
     correct:1,
     feedback:["هەڵەیت پڕۆفیسۆر","خۆش نەبوو ڕەحمان؟","😊وازبێنە دوای ئەبێ مبنی و مڕفوعیان بکەن","🙂چەنێک بیرت کردوە تا ئەم وەڵامەو بۆ هاو"],
     background:"https://i.ibb.co/spjxD1Jb/Screenshot-20251112-171738-Chrome.jpg",
     wrongVideo:"https://youtube.com/shorts/uqaNvUMsTM0?si=82dbIKkOahJPJJQ9"
   },
-  {
-    question:"🦦کابرایەک چاکەتەی بە عەکسەوە لەبەرەکا بۆ؟",
+  { question:"🦦کابرایەک چاکەتەی بە عەکسەوە لەبەرەکا بۆ؟",
     answers:["بۆ جەو","لێی تێکچوە","بۆی لە پێشەوە پشتی بخورێنێ","🦦🦦چاکەتەکەی دوو دیوە"],
     correct:2,
     feedback:["🐸نداخۆ ازیزم","لەو مەعلوماتە خۆشەویستان دە سەیڤی کەن","ئەوە پێی ئەوترێ تەکنەلۆجیا","چەند زیرەکی ئەی فسفۆڕ نییە🐸"],
-    background:"https://i.ibb.co/kVFWPHhq/Screenshot-20251112-194913-Chrome.jpg"
+    background:"https://i.ibb.co/kVFWPHhq/Screenshot-20251112-194913-Chrome.jpg",
+    jumpscare:"https://i.ibb.co/kVFWPHhq/Screenshot-20251112-194913-Chrome.jpg"
   },
-  {
-    question:"کیسەڵ بۆچی هەمبەرگر ناخوات؟",
+  { question:"کیسەڵ بۆچی هەمبەرگر ناخوات؟",
     answers:["چونکە ژەمی خێرایە","چونکە ددانی نییە","🙂چونکە خەفەت ئەخوا","چونکە خواردنی ئەو نییە"],
     correct:0,
     feedback:["چیە بەدزیەوە سەعی ئەکەی وا زیرەک بووی😾؟","ئافەرین دەستخۆش نەتزانی🐸","های هیش زندگی","ئی هوار چن وایە"],
-    background:"https://i.ibb.co/MyNp3mwd/Screenshot-20251112-194934-Chrome.jpg"
+    background:"https://i.ibb.co/j94G1S0t/Screenshot-20251112-194934-Chrome.jpg"
   },
-  {
-    question:"کابرایەک چوو کاتژمێرێ بکڕێ بینی گرانە چی کرد؟",
+  { question:"کابرایەک چوو کاتژمێرێ بکڕێ بینی گرانە چی کرد؟",
     answers:["پێنج دەقەی کڕی","پارەی بۆ کۆکردەوە کڕی و بەخۆشی ژیا","کاتژمێرێکی هەرزانتری کڕی","پەشیمان بۆوە لە کڕینی"],
     correct:2,
     feedback:["ئی هوار خوشەویستان","بۆ چیرۆکی سەندرێلایە لە ئاخیرا بڵێی بەخۆشی ژیا","😂تەواو یاعنی بەتەمای چی","نداخۆ هەڵەی"],
-    background:"https://i.ibb.co/GfvTXz8v/Screenshot-20251112-195006-Chrome.jpg"
+    background:"https://i.ibb.co/5XWFdbSW/Screenshot-20251112-195006-Chrome.jpg",
+    wrongVideo:"https://youtube.com/shorts/GQNW1IlvhcY?si=FkAn2tLDLaGZ1R3G"
   },
-  {
-    question:"کابرایەک کارەبا ئەیگرێ ئەڵێت چی؟",
+  { question:"کابرایەک کارەبا ئەیگرێ ئەڵێت چی؟",
     answers:["یارمەتی داوائەکا","ئەڵێت ئەگەر ئازان ئەمپێر ئەمپێر وەرن","ئەڵێ کێ کارەباکەی هەڵکرد","ئەڵێ من کارەبا نەیکوشتم تۆ بڵێی ئاو بمکوژێ🐸؟"],
     correct:1,
     feedback:["ئی هوار ل زیرەکی تۆ","😂تۆش وا چاو نەترسی","😾تۆ بڵێی کێ بوبێ","😊کەست دیوە کارەبا بیگرێ و وابڵێ"],
-    background:"https://i.ibb.co/k2z9bXLV/Screenshot-20251112-194759-Chrome.jpg"
+    background:"https://i.ibb.co/Wv7P8frN/Screenshot-20251112-194759-Chrome.jpg"
   },
-  {
-    question:"چۆن فێری دروستکردنی کولیچە ببین ؟",
+  { question:"چۆن فێری دروستکردنی کولیچە ببین ؟",
     answers:["بە بیست و پێنج هەزار","بەسەختی","نازانم","بە مشێر و شمشار"],
     correct:0,
     feedback:["😊بە پێنج نابێ بۆ خۆمان؟","ئەوە تۆ دەرچووی زانکۆی هاڕڤارد نەبووی ئەونە زیرەکی؟","ئەی بۆ بویتە سەرۆک لیست؟","🐸واو لەم ئامیرانە"],
-    background:"https://i.ibb.co/Jwgwf2XQ/Screenshot-20251112-194632-Chrome.jpg"
+    background:"https://i.ibb.co/G4N4KkgT/Screenshot-20251112-194632-Chrome.jpg"
   }
 ];
 
-function startGame(){
-  document.getElementById('welcome').style.display='none';
-  showLevels();
-}
-
+// FUNCTIONS
+function startGame(){ document.getElementById('welcome').style.display='none'; showLevels(); }
 function showLevels(){
   document.getElementById('levels').style.display='block';
-  const container=document.getElementById('levelButtons');
-  container.innerHTML='';
+  const container=document.getElementById('levelButtons'); container.innerHTML='';
   quiz.forEach((q,i)=>{
     const btn=document.createElement('button');
     btn.textContent=`ئاست ${i+1}`;
@@ -170,16 +190,26 @@ function checkAnswer(idx){
   btns.forEach(b=>b.disabled=true);
   const feedbackEl=document.getElementById('feedback');
   feedbackEl.textContent=q.feedback[idx];
-  feedbackEl.style.color=isRight?'green':'red';
+  feedbackEl.style.color=isRight?'lime':'red';
+  feedbackEl.style.display='inline-block';
+
   const bigBadge=document.getElementById('bigBadge');
   bigBadge.style.display='block';
   bigBadge.textContent=isRight?'ڕاستە':'هەڵەیە';
-  bigBadge.style.color=isRight?'green':'red';
+  bigBadge.style.color=isRight?'lime':'red';
 
-  if(!isRight && q.wrongVideo){
-    const media=document.getElementById('mediaFrame');
-    media.src=q.wrongVideo;
-    document.getElementById('mediaOverlay').style.display='flex';
+  // Wrong video or jumpscare
+  if(!isRight){
+    if(q.wrongVideo){
+      const media=document.getElementById('mediaFrame');
+      media.src=q.wrongVideo;
+      document.getElementById('mediaOverlay').style.display='flex';
+    } else if(q.jumpscare){
+      const js=document.getElementById('jumpscare');
+      js.style.backgroundImage=`url(${q.jumpscare})`;
+      js.style.display='block';
+      setTimeout(()=>{ js.style.display='none'; },1500);
+    }
   }
 
   if(isRight && currentIndex+1>=unlocked){
