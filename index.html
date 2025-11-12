@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ku">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پێشەوا کولیچاوی</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #111; color: #fff; padding: 20px; text-align: center; }
+  h1 { color: #ff6600; margin-bottom: 20px; }
+  .question {
+    background: #222; padding: 15px; margin: 10px auto; border-radius: 10px;
+    max-width: 600px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); text-align: center;
+    color: white; position: relative; overflow: hidden;
+  }
+  .question::before {
+    content: '';
+    position: absolute; top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.5); border-radius: 10px;
+  }
+  .question-content { position: relative; z-index: 1; }
+  button { margin: 5px; padding: 8px 12px; border: none; border-radius: 5px; background: #ff6600; color: white; cursor: pointer; }
+  button:hover { background: #e65c00; }
+  .result { margin-top: 10px; font-weight: bold; color: #00ff00; }
+  iframe, video { margin-top: 10px; max-width: 100%; border-radius: 10px; }
+  #jumpScare { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%;
+    background: black; z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
+  #jumpScare img { max-width: 80%; max-height: 80%; }
+</style>
+</head>
+<body>
+
+<h1>دەستپێکردن</h1>
+
+<div id="quiz-container"></div>
+
+<!-- Jump scare -->
+<div id="jumpScare">
+  <img id="scareImage" src="" alt="Jump Scare!">
+  <audio id="scareSound"></audio>
+</div>
+
+<script>
+const backgrounds = [
+"https://i.ibb.co/cSN58rxn/Screenshot-20251112-164659-You-Tube.jpg",
+"https://i.ibb.co/twK5L3KT/Screenshot-20251112-165459-You-Tube.jpg",
+"https://i.ibb.co/ynywSSDk/Screenshot-20251112-165253-You-Tube.jpg",
+"https://i.ibb.co/j9YmC91N/Screenshot-20251112-165646-You-Tube.jpg",
+"https://i.ibb.co/mFXhPMtX/Screenshot-20251112-165427-You-Tube.jpg",
+"https://i.ibb.co/TDGTtQyF/Screenshot-20251112-164844-You-Tube.jpg",
+"https://i.ibb.co/93tr7L9f/Screenshot-20251112-165529-You-Tube.jpg",
+"https://i.ibb.co/4R8k2hp7/Screenshot-20251112-171738-Chrome.jpg",
+"https://i.ibb.co/YByK3Nbp/Screenshot-20251112-171818-Chrome.jpg",
+"https://i.ibb.co/Y7qT4hGL/Screenshot-20251112-165045-You-Tube.jpg"
+];
+
+const quiz = [
+{
+q: "کەسێک لەچاڵێک گیردەخوا بۆ ناتوانێ بێتە دەر",
+options: ["لەبەرەوەی ناوی عاسیە","لەبەرەوەی مردوە","لەبەرەوەی بەنزینی نەماوە","لەبەرەوەی چاڵەکە قوڵە"],
+correct: 0,
+feedback: ["قۆپیە ناکەی وا زیرەکی","ئەوە تۆ خزمی ئەنیشتاین نیت؟","بۆ سەیارەیە گوناح؟","نداخۆ غڵتی گوناح"],
+video: "https://www.w3schools.com/html/mov_bbb.mp4",
+wrongVideo: "https://www.youtube.com/embed/7zyAKbLRpQ4?autoplay=1"
+},
+{
+q: "کولیچەیەک ئەچێت بۆ وەرگرتنی کار پێی ئەڵێن بەهرەت چییە ئەڵێ لاسایی ئاژەڵ ئەکەمەوە جا کارەکەی نادەنێ چی ئەکا؟",
+options: ["پەنجەرەکە ئەکاتەوە ئەفڕێ","دڵتەنگ ئەبێ","بەدوای کارێکی تر ئەگەڕێ","خۆی ئەکوژێ"],
+correct: 0,
+feedback: ["تا ئێستا چەن کولیچەت بینیوە بفڕێ","بەڕاست؟","کولیچەیەکی زیرەکە ها","🐸گەر کولیچەکان خۆیان بکوژن ئۆپۆزسیۆنی کولیچە هەڵەوەشێتەوە"]
+},
+{
+q: "گەر کەسێک مێشکی فراوان بێت چی ئەبێت؟",
+options: ["زیرەک ئەبێت","بەهرەکانی زیاد دەکا","ئەتوانێ کولیچە دروست بکا","ناتوانێت تیشێرتەکەی دابکەنێ"],
+correct: 3,
+jumpscare: {img:"https://i.ibb.co/3c1QmXf/freddy.png", sound:"https://www.soundjay.com/horror/sounds/scream-01.mp3"},
+feedback: ["ئی هوار چن کاریگرە ئازیزان","شانسی زۆرە ها","😂ئەی بۆ نایکڕێت هەی گوناح","تکایە ئاگاداری مێشکتان بن کاریگرە"]
+},
+{
+q: "دکتۆرێک لە ترافیکێک گیر ئەخوا سێر ئەکا ترافیکەکە باش کار ناکا دائەبەزێت لەسەیارەکەی چی ئەکا؟",
+options: ["پیای ئەکێشێ","بەپێ ئەڕوا","قەترەی بۆ ئەنوسێ","دەردە دڵی بۆئەکا چونکە خەمبارە"],
+correct: 2,
+feedback: ["😊ئەی بۆ نایخاتە برنجەوە؟","تەکنەلۆجیا لەخۆت دێ هەی ئەفلاتون","😊😊ترافیکەکانتان خۆش بوێت","🐸بۆ ترافیکەکەی هاوڕێی بەجێی هێشتوە؟"]
+},
+{
+q: "گەر دوو مامۆستای عەرەبی دوو منداڵیان هەبێت ناوی ئەنێن چی؟",
+options: ["زانا و دانا","فتحە و کسرە","ماضی و مضارع","ئەحمەد و محمد"],
+correct: 1,
+feedback: ["هەڵەیت پڕۆفیسۆر","خۆش نەبوو ڕەحمان؟","😊وازبێنە دوای ئەبێ مبنی و مڕفوعیان بکەن","🙂چەنێک بیرت کردوە تا ئەم وەڵامەو بۆ هاو"]
+},
+{
+q: "🦦کابرایەک چاکەتەی بە عەکسەوە لەبەرەکا بۆ؟",
+options: ["بۆ جەو","لێی تێکچوە","بۆی لە پێشەوە پشتی بخورێنێ","🦦🦦چاکەتەکەی دوو دیوە"],
+correct: 2,
+jumpscare: {img:"https://i.ibb.co/9vZt8xH/chriswalker.png", sound:"https://www.soundjay.com/horror/sounds/scream-02.mp3"},
+feedback: ["🐸نداخۆ ازیزم","لەو مەعلوماتە خۆشەویستان دە سەیڤی کەن","ئەوە پێی ئەوترێ تەکنەلۆجیا","چەند زیرەکی ئەی فسفۆڕ نییە🐸"]
+},
+{
+q: "کیسەڵ بۆچی هەمبەرگر ناخوات؟",
+options: ["چونکە ژەمی خێرایە","چونکە ددانی نییە","🙂چونکە خەفەت ئەخوا","چونکە خواردنی ئەو نییە"],
+correct: 0,
+feedback: ["چیە بەدزیەوە سەعی ئەکەی وا زیرەک بووی😾؟","ئافەرین دەستخۆش نەتزانی🐸","های هیش زندگی","ئی هوار چن وایە"]
+},
+{
+q: "کابرایەک چوو کاتژمێرێ بکڕێ بینی گرانە چی کرد؟",
+options: ["پێنج دەقەی کڕی","پارەی بۆ کۆکردەوە کڕی و بەخۆشی ژیا","کاتژمێرێکی هەرزانتری کڕی","پەشیمان بۆوە لە کڕینی"],
+correct: 2,
+video: "https://www.w3schools.com/html/movie.mp4",
+wrongVideo: "https://www.youtube.com/embed/GQNW1IlvhcY?autoplay=1",
+feedback: ["ئی هوار خوشەویستان","بۆ چیرۆکی سەندرێلایە لە ئاخیرا بڵێی بەخۆشی ژیا","😂تەواو یاعنی بەتەمای چی","نداخۆ هەڵەی"]
+},
+{
+q: "کابرایەک کارەبا ئەیگرێ ئەڵێت چی؟",
+options: ["یارمەتی داوائەکا","ئەڵێت ئەگەر ئازان ئەمپێر ئەمپێر وەرن","ئەڵێ کێ کارەباکەی هەڵکرد","ئەڵێ من کارەبا نەیکوشتم تۆ بڵێی ئاو بمکوژێ🐸؟"],
+correct: 1,
+jumpscare: {img:"https://i.ibb.co/6T2mX3h/huggywuggy.png", sound:"https://www.soundjay.com/horror/sounds/scream-03.mp3"},
+feedback: ["ئی هوار ل زیرەکی تۆ","😂تۆش وا چاو نەترسی","😾تۆ بڵێی کێ بوبێ","😊کەست دیوە کارەبا بیگرێ و وابڵێ"]
+},
+{
+q: "چۆن فێری دروستکردنی کولیچە ببین ؟",
+options: ["بە بیست و پێنج هەزار","بەسەختی","نازانم","بە مشێر و شمشار"],
+correct: 0,
+feedback: ["😊بە پێنج نابێ بۆ خۆمان؟","ئەوە تۆ دەرچووی زانکۆی هاڕڤارد نەبووی ئەونە زیرەکی؟","ئەی بۆ بویتە سەرۆک لیست؟","🐸واو لەم ئامیرانە"]
+}
+];
+
+const container = document.getElementById("quiz-container");
+const jumpScareDiv = document.getElementById("jumpScare");
+const scareSound = document.getElementById("scareSound");
+const scareImage = document.getElementById("scareImage");
+
+quiz.forEach((item, index) => {
+  const div = document.createElement("div");
+  div.className = "question";
+  div.style.background = `url('${backgrounds[index]}') center/cover no-repeat`;
+  
+  const contentDiv = document.createElement("div");
+  contentDiv.className = "question-content";
+  contentDiv.innerHTML = `<p><strong>پرسیار ${index+1}:</strong> ${item.q}</p>`;
+  
+  if(item.video){
+    const vid = document.createElement("video");
+    vid.src = item.video;
+    vid.controls = true;
+    contentDiv.appendChild(vid);
+  }
+  
+  item.options.forEach((option, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = option;
+    btn.addEventListener("click", () => {
+      const existingRes = contentDiv.querySelector(".result");
+      if(existingRes) existingRes.remove();
+
+      const res = document.createElement("p");
+      res.className = "result";
+
+      if(i === item.correct){
+        res.textContent = item.feedback[i];
+      } else {
+        res.textContent = item.feedback[i];
+
+        // Wrong answer video for Q1, Q5, Q8
+        if(item.wrongVideo){
+          const vidContainer = document.createElement("div");
+          vidContainer.innerHTML = `<iframe width="100%" height="250" src="${item.wrongVideo}" frameborder="0" allowfullscreen></iframe>`;
+          contentDiv.appendChild(vidContainer);
+        }
+
+        // Jump scare
+        if(item.jumpscare){
+          scareImage.src = item.jumpscare.img;
+          scareSound.src = item.jumpscare.sound;
+          jumpScareDiv.style.display = "flex";
+          scareSound.play();
+        }
+      }
+
+      contentDiv.appendChild(res);
+    });
+    contentDiv.appendChild(btn);
+  });
+
+  div.appendChild(contentDiv);
+  container.appendChild(div);
+});
+
+jumpScareDiv.addEventListener("click", () => {
+  jumpScareDiv.style.display = "none";
+  scareSound.pause();
+  scareSound.currentTime = 0;
+});
+</script>
+
+</body>
+</html>
